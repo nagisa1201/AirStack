@@ -103,8 +103,15 @@ RUN if [ "$SKIP_MACVO" != "true" ]; then \
     python3-libnvinfer python3-libnvinfer-dev; \
   fi
 
+# Persist completed downloads across build retries and resume interrupted wheels.
+RUN --mount=type=cache,id=airstack-robot-pip,target=/var/cache/pip \
+  PIP_CACHE_DIR=/var/cache/pip python3 -m pip install --timeout 120 --retries 10 --upgrade pip==25.3
+
 # Install Python dependencies
-RUN pip3 install \
+# Overlay the SymPy version required by torch without uninstalling Ubuntu's distutils package.
+RUN --mount=type=cache,id=airstack-robot-pip,target=/var/cache/pip \
+  PIP_CACHE_DIR=/var/cache/pip python3 -m pip install --timeout 120 --retries 10 --no-deps --ignore-installed sympy==1.14.0 && \
+  PIP_CACHE_DIR=/var/cache/pip python3 -m pip install --timeout 120 --retries 10 --resume-retries 10 \
   empy \
   future \
   lxml \
@@ -180,7 +187,15 @@ RUN if [ "$SKIP_MACVO" != "true" ]; then \
 
 # Fixes for MACVO Integration
 RUN if [ "$SKIP_MACVO" != "true" ]; then pip install huggingface_hub; fi
-RUN if [ "$SKIP_MACVO" != "true" ]; then pip uninstall matplotlib -y; fi
+# MACVO's GridRecorder imports matplotlib at startup. Keep the pinned version
+# installed above; removing it prevents the odometry node from starting.
+# Ubuntu's old namespace shim hides pip's newer mpl_toolkits (Axes3D).
+RUN if [ "$SKIP_MACVO" != "true" ] && [ -f /usr/lib/python3/dist-packages/matplotlib-3.5.1-nspkg.pth ]; then \
+    mv /usr/lib/python3/dist-packages/matplotlib-3.5.1-nspkg.pth \
+       /usr/lib/python3/dist-packages/matplotlib-3.5.1-nspkg.pth.disabled; \
+    mv /usr/lib/python3/dist-packages/mpl_toolkits/__init__.py \
+       /usr/lib/python3/dist-packages/mpl_toolkits/__init__.py.disabled; \
+    python3 -c "from mpl_toolkits.mplot3d import Axes3D"; fi
 
 # Temporary fix for UFM
 #WORKDIR /root/model_weights

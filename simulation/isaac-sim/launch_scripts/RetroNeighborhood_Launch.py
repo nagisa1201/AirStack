@@ -2,9 +2,16 @@
 import carb
 from isaacsim import SimulationApp
 
-simulation_app = SimulationApp({"headless": False})
-
 import os
+
+# Observation-window optimization only; camera/lidar render products stay enabled.
+_raven_headless = os.environ.get("RAVEN_HEADLESS", "0") == "1"
+simulation_app = SimulationApp({
+    "headless": _raven_headless,
+    "disable_viewport_updates": _raven_headless,
+})
+print(f"[Render] headless={_raven_headless}, disable_viewport_updates={_raven_headless}", flush=True)
+
 import sys
 import time
 
@@ -55,7 +62,6 @@ for ext in [
     "omni.graph.window.action",
     "omni.graph.window.generic",
     "omni.graph.ui_nodes",
-    "airlab.pegasus",
     "pegasus.simulator",
 ]:
     if not ext_manager.is_extension_enabled(ext):
@@ -168,6 +174,18 @@ class PegasusApp:
 
 def main():
     pg_app = PegasusApp()
+
+    # Lower only the observation viewport resolution; keep sensor rendering unchanged.
+    from omni.kit.viewport.utility import get_active_viewport
+
+    viewport = get_active_viewport()
+    if viewport is not None:
+        viewport.fill_frame = False
+        viewport.resolution = (960, 540)
+        print(f"[Viewport] resolution={viewport.resolution}", flush=True)
+    else:
+        carb.log_warn("No active observation viewport; resolution override skipped.")
+
     pg_app.run()
 
 

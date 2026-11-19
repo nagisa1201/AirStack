@@ -145,14 +145,45 @@ ENV ACCEPT_EULA="Y"
 RUN /isaac-sim/python.sh -m pip install --no-cache-dir -e /isaac-sim/.local/share/ov/data/documents/Kit/shared/exts/pegasus.simulator
 
 # Install PX4 things
-RUN git clone --branch ${PX4_VERSION} --recursive https://github.com/PX4/PX4-Autopilot.git
-# install px4 dependencies as root for global installs
+# Fetch the requested release without the full history, and retry transient failures.
+# Retry submodules separately so completed downloads survive a failed submodule.
+RUN set -eu; \
+    for attempt in 1 2 3; do \
+        git -c http.version=HTTP/1.1 clone --depth 1 --branch "${PX4_VERSION}" \
+            https://github.com/PX4/PX4-Autopilot.git && break; \
+        [ "$attempt" -lt 3 ] || exit 1; \
+        rm -rf PX4-Autopilot; \
+        sleep 5; \
+    done; \
+    cd PX4-Autopilot; \
+    for attempt in 1 2 3; do \
+        git -c http.version=HTTP/1.1 submodule update --init --recursive --depth 1 && break; \
+        [ "$attempt" -lt 3 ] || exit 1; \
+        sleep 5; \
+    done
+# Keep PX4 build dependencies separate from Ubuntu/ROS Python packages.
 USER root
-RUN cd PX4-Autopilot && \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-venv && \
+    python3 -m venv /opt/px4-venv && \
+    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,id=airstack-px4-pip,target=/var/cache/pip \
+    cd PX4-Autopilot && \
+    PATH="/opt/px4-venv/bin:$PATH" PIP_CACHE_DIR=/var/cache/pip \
+    PIP_DEFAULT_TIMEOUT=120 PIP_RETRIES=10 \
     DEBIAN_FRONTEND=noninteractive ./Tools/setup/ubuntu.sh
-# build px4 as user
+# PX4's version generator requires NuttX tags even for SITL builds.
+# Fetch tag metadata without downloading the historical file contents.
+RUN set -eu; \
+    for attempt in 1 2 3; do \
+        git -c http.version=HTTP/1.1 -C PX4-Autopilot/platforms/nuttx/NuttX/nuttx \
+            fetch --filter=blob:none --depth 1 --tags origin && break; \
+        [ "$attempt" -lt 3 ] || exit 1; \
+        sleep 5; \
+    done
+# Use the same Python environment when compiling PX4.
 RUN cd PX4-Autopilot && \
-    make px4_sitl
+    PATH="/opt/px4-venv/bin:$PATH" make px4_sitl
 
 RUN /isaac-sim/python.sh -m pip install --no-cache-dir lark-parser
 
@@ -171,3 +202,9 @@ ENV ISAACSIM_PYTHON=/isaac-sim/python.sh
 RUN sed -i 's|^root:x:0:0:root:/root:|root:x:0:0:root:/isaac-sim:|' /etc/passwd
 
 WORKDIR /isaac-sim
+
+# Isaac Sim 5.1's OmniGraph/Replicator and numba need NumPy 1.x.
+# MAVProxy's latest optional dependencies otherwise pull in NumPy 2.x.
+# Apply this after all dependency installs, independently of the PX4 venv.
+RUN /isaac-sim/python.sh -m pip install --no-cache-dir \
+    numpy==1.26.4 opencv-python==4.11.0.86 quantized-mesh-tile==0.6.1
