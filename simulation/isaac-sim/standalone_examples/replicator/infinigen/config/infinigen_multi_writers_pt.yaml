@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 environments:
   # List of background environments (list of folders or files)
   folders:
@@ -17,9 +32,9 @@ capture:
   resolution: [640, 480]
   # Disable render products throughout the pipeline, enable them only when capturing the frames
   disable_render_products: true
-  # Number of subframes to render (RayTracedLighting) to avoid temporal rendering artifacts (e.g. ghosting)
+  # Number of subframes to render (RealTimePathTracing) to avoid temporal rendering artifacts (e.g. ghosting)
   rt_subframes: 8
-  # Use PathTracing renderer instead of RayTracedLighting when capturing the frames
+  # Use PathTracing renderer instead of RealTimePathTracing when capturing the frames
   path_tracing: true
   # Offset to avoid the images always being in the image center
   camera_look_at_target_offset: 0.1
@@ -92,20 +107,19 @@ distractors:
     gravity_disabled_chance: 0.25
     # List of folders and files to search to randomly choose from
     folders:
-      - /NVIDIA/Assets/DigitalTwin/Assets/Warehouse/Safety/Floor_Signs/
-      - /NVIDIA/Assets/DigitalTwin/Assets/Warehouse/Safety/Cones/
+      - /Isaac/Environments/Office/Props/
     files:
       - /Isaac/Environments/Simple_Warehouse/Props/SM_CardBoxD_04_1847.usd
       - /Isaac/Environments/Simple_Warehouse/Props/SM_CardBoxA_01_414.usd
       - /Isaac/Environments/Simple_Warehouse/Props/S_TrafficCone.usd
       - /Isaac/Environments/Simple_Warehouse/Props/S_WetFloorSign.usd
-      - /Isaac/Environments/Office/Props/SM_Book_03.usd
-      - /Isaac/Environments/Office/Props/SM_Book_34.usd
-      - /Isaac/Environments/Office/Props/SM_BookOpen_01.usd
-      - /Isaac/Environments/Office/Props/SM_Briefcase.usd
-      - /Isaac/Environments/Office/Props/SM_Extinguisher.usd
       - /Isaac/Environments/Hospital/Props/SM_MedicalBag_01a.usd
       - /Isaac/Environments/Hospital/Props/SM_MedicalBox_01g.usd
+
+# Physics GPU memory settings for the simulation
+physics:
+  # GPU collision stack size in bytes (300 MB, PhysX default of 64 MB overflows with many colliders)
+  gpu_collision_stack_size: 314572800
 
 # Hide ceiling, move viewport camera to top-down view above the working area
 debug_mode: true

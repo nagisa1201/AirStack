@@ -3,10 +3,12 @@ services:
     profiles:
       - ""
       - sitl
-    image: &image_tag ${PROJECT_DOCKER_REGISTRY}/${PROJECT_NAME}:v${DOCKER_IMAGE_TAG}_isaac-sim
+    image: &image_tag ${PROJECT_DOCKER_REGISTRY}/${PROJECT_NAME}:v${ISAAC_SIM_IMAGE_TAG:-0.16.2-isaac6.0.0}_isaac-sim
     build:
       context: ../
       dockerfile: docker/Dockerfile.isaac-ros
+      args:
+        ISAAC_VERSION: ${ISAAC_SIM_VERSION:-6.0.0}
       tags:
         - *image_tag
     container_name: isaac-sim
@@ -18,7 +20,7 @@ services:
         if [ \"${ISAAC_SIM_USE_STANDALONE}\" = 'true' ]; then
           tmux send-keys -t isaac 'run_isaac_python /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/${ISAAC_SIM_SCRIPT_NAME} --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts' ENTER
         else
-          tmux send-keys -t isaac 'ros2 launch isaacsim run_isaacsim.launch.py install_path:=/isaac-sim gui:=\"${ISAAC_SIM_GUI}\" play_sim_on_start:=\"${PLAY_SIM_ON_START}\" ' ENTER
+          tmux send-keys -t isaac 'ros2 launch isaacsim_bringup run_isaacsim.launch.py install_path:=/isaac-sim use_internal_libs:=false gui:=\"${ISAAC_SIM_GUI}\" play_sim_on_start:=\"${PLAY_SIM_ON_START}\" ' ENTER
         fi
       fi;
       sleep infinity"
@@ -36,6 +38,7 @@ services:
       - AUTOLAUNCH=${AUTOLAUNCH:-'false'}
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/isaac-sim/.Xauthority
       # Isaac Sim stuff
       - PLAY_SIM_ON_START=${PLAY_SIM_ON_START}
       # Drone spawn config (set via ./launch_raven.sh --env <name> --x ... --y ...)
@@ -56,20 +59,21 @@ services:
               capabilities: [ gpu ]
     volumes:
       # display
-      - $HOME/.Xauthority:/isaac-sim/.Xauthority
+      - ${XAUTHORITY:-${HOME}/.Xauthority}:/isaac-sim/.Xauthority:ro
       - /tmp/.X11-unix:/tmp/.X11-unix
       # isaac sim stuff
-      - $HOME/docker/isaac-sim/cache/main:/isaac-sim/.cache:rw \
-      - $HOME/docker/isaac-sim/cache/computecache:/isaac-sim/.nv/ComputeCache:rw \
-      - $HOME/docker/isaac-sim/logs:/isaac-sim/.nvidia-omniverse/logs:rw \
-      - $HOME/docker/isaac-sim/config:/isaac-sim/.nvidia-omniverse/config:rw \
-      - $HOME/docker/isaac-sim/data:/isaac-sim/.local/share/ov/data:rw \
-      - $HOME/docker/isaac-sim/pkg:/isaac-sim/.local/share/ov/pkg:rw \
+      - $HOME/docker/isaac-sim/6.0/cache/main:/isaac-sim/.cache:rw
+      - $HOME/docker/isaac-sim/6.0/cache/computecache:/isaac-sim/.nv/ComputeCache:rw
+      - $HOME/docker/isaac-sim/6.0/cache/kit:/isaac-sim/kit/cache:rw
+      - $HOME/docker/isaac-sim/6.0/logs:/isaac-sim/.nvidia-omniverse/logs:rw
+      - $HOME/docker/isaac-sim/6.0/config:/isaac-sim/.nvidia-omniverse/config:rw
+      - $HOME/docker/isaac-sim/6.0/data:/isaac-sim/.local/share/ov/data:rw
+      - $HOME/docker/isaac-sim/6.0/pkg:/isaac-sim/.local/share/ov/pkg:rw
       # pegasus integration
       - ../extensions/PegasusSimulator/extensions/pegasus.simulator:/isaac-sim/.local/share/ov/data/documents/Kit/shared/exts/pegasus.simulator/:rw
       # omniverse
       - ./omniverse.toml:/isaac-sim/.nvidia-omniverse/config/omniverse.toml:rw
-      - ./user.config.json:/isaac-sim/.local/share/ov/data/Kit/Isaac-Sim Full/5.1/user.config.json:rw # enables pegasus extension; IMPORTANT: set the version number without the trailing .0
+      - ./user.6.0.config.json:/isaac-sim/.local/share/ov/data/Kit/Isaac-Sim Full/6.0/user.config.json:rw # enables pegasus extension; IMPORTANT: set the version number without the trailing .0
       # developer stuff
       - .dev:/isaac-sim/.dev:rw # developer config
       - .bashrc:/isaac-sim/.bashrc:rw # bash config

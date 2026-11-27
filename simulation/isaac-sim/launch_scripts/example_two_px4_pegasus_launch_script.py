@@ -13,13 +13,17 @@ from isaacsim import SimulationApp
 # Start Isaac Sim's simulation environment (Must start this before importing omni modules)
 simulation_app = SimulationApp({"headless": False})
 
+# Load Pegasus dependencies before importing its Python modules.
+from isaacsim.core.utils.extensions import enable_extension
+enable_extension("pegasus.simulator")
+
 import rclpy
 print(f"[Launcher] SUCCESS: rclpy imported from {rclpy.__file__}")
 
 import omni.kit.app
 import omni.timeline
 import omni.ui
-from omni.isaac.core.world import World
+from isaacsim.core.api.world import World
 from datetime import datetime
 from pxr import UsdLux
 

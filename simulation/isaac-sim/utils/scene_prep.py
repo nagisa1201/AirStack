@@ -496,7 +496,7 @@ def move_root_prims_to_world(usd_path: str) -> list:
 def save_scene_as_contained_usd(source_usd_url: str, output_dir: str) -> bool:
     """Collect a USD stage and all its dependencies into a self-contained directory.
 
-    Uses omni.kit.usd.collect.Collector (Isaac Sim 5.1 / Kit 107) which correctly
+    Uses omni.kit.usd.collect.Collector, which
     handles Nucleus omniverse:// URLs, MDL materials, and texture files.
 
     The collected root USD will be written to output_dir, with all referenced

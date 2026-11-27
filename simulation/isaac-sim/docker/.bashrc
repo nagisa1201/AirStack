@@ -125,19 +125,15 @@ source /opt/ros/jazzy/setup.bash
 source /isaac-sim/jazzy_ws/install/setup.bash  # isaacsim ros2 package
 
 # needed for communication with Isaac Sim ROS2  # https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_ros.html#enabling-the-ros-bridge-extension
-export FASTRTPS_DEFAULT_PROFILES_FILE="/isaac-sim/fastdds.xml"
+export FASTRTPS_DEFAULT_PROFILES_FILE="/isaac-sim/.ros/fastdds.xml"
 export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 # for local development, prevent conflict with other desktops
 export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
 
-# --- Environment Separation ---
-# Define the PYTHONPATH specifically for Isaac Sim (Python 3.10)
-# This strips out the System ROS (Python 3.12) paths to prevent conflicts
-export ISAAC_SIM_PYTHONPATH=$(echo $PYTHONPATH | tr ':' '\n' | grep -v "lib/python3.12/site-packages" | paste -sd ':' -):/isaac-sim/exts/isaacsim.ros2.bridge/jazzy/rclpy
-
-# Helper function to run Isaac Sim python scripts with the correct environment
+# Isaac Sim 6 and Ubuntu 24.04 ROS Jazzy both use Python 3.12.
+# Keep the sourced Jazzy paths so rclpy and custom ROS messages can be imported.
 run_isaac_python() {
-    PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh "$@"
+    /isaac-sim/python.sh "$@"
 }
 export -f run_isaac_python
 

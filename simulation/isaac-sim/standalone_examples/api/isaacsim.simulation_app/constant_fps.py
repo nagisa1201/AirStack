@@ -1,12 +1,21 @@
-# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 #
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto. Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+"""Demonstrate maintaining a constant frame rate in simulation."""
+
+import argparse
 import time
 
 from isaacsim import SimulationApp
@@ -17,6 +26,10 @@ from isaacsim import SimulationApp
 
 DESIRED_FRAME_RATE = 10.0  # frames per second
 frame_period_s = 1.0 / DESIRED_FRAME_RATE
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--test", default=False, action="store_true", help="Run in test mode")
+args, _ = parser.parse_known_args()
 
 simulation_app = SimulationApp({"headless": True})
 
@@ -29,13 +42,20 @@ app_update_time_s = 0.0
 
 
 def update_event_callback(event: carb.events.IEvent):
+    """Record the wall-clock time of each app update event."""
+    global last_frametime_timestamp_ns, app_update_time_s
     timestamp_ns = time.perf_counter_ns()
     app_update_time_s = round((timestamp_ns - last_frametime_timestamp_ns) / 1e9, 9)
     last_frametime_timestamp_ns = timestamp_ns
 
 
-omni.kit.app.get_app().get_update_event_stream().create_subscription_to_pop(update_event_callback)
+update_sub = carb.eventdispatcher.get_eventdispatcher().observe_event(
+    event_name=omni.kit.app.GLOBAL_EVENT_UPDATE,
+    on_event=update_event_callback,
+    observer_name="constant_fps.update_event_callback",
+)
 
+frame_count = 0
 while simulation_app.is_running():
     # Measure duration of single app update
     simulation_app.update()
@@ -47,5 +67,10 @@ while simulation_app.is_running():
         time.sleep(sleep_duration_s)
     instantaneous_fps = 1.0 / max(frame_period_s, app_update_time_s)
     carb.log_warn(f"FPS is {instantaneous_fps}")
+    frame_count += 1
+    if args.test and frame_count >= 10:
+        break
+
+update_sub = None
 
 simulation_app.close()

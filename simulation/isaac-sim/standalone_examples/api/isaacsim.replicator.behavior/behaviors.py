@@ -1,11 +1,19 @@
-# Copyright (c) 2024, NVIDIA CORPORATION. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 #
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto. Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Demonstrate replicator behavior scripts for randomizing prims in Isaac Sim."""
 
 from isaacsim import SimulationApp
 
@@ -19,7 +27,7 @@ import omni.kit.app
 import omni.kit.commands
 import omni.timeline
 import omni.usd
-from isaacsim.core.utils.extensions import get_extension_path_from_name
+from isaacsim.core.experimental.utils.app import get_extension_path as get_extension_path_from_name
 from isaacsim.replicator.behavior.behaviors import (
     LightRandomizer,
     LocationRandomizer,
@@ -39,7 +47,7 @@ SCRIPTS_PATH = os.path.join(EXTENSION_PATH, "isaacsim/replicator/behavior/behavi
 
 # Enable scripting extension in standalone mode
 ext_manager = omni.kit.app.get_app().get_extension_manager()
-ext_manager.set_extension_enabled_immediate("omni.kit.scripting", True)
+ext_manager.set_extension_enabled_immediate("omni.behavior.scripting.core", True)
 simulation_app.update()
 
 # Enable behavior scripts (running python scripts attached to USD assets)
@@ -47,16 +55,16 @@ carb.settings.get_settings().set_bool("/app/scripting/ignoreWarningDialog", True
 simulation_app.update()
 
 
-# Setup a new stage with a dome light
 def setup_stage():
+    """Set up a new stage with a dome light."""
     omni.usd.get_context().new_stage()
     stage = omni.usd.get_context().get_stage()
     dome_light = stage.DefinePrim("/World/DomeLight", "DomeLight")
     dome_light.CreateAttribute("inputs:intensity", Sdf.ValueTypeNames.Float).Set(500.0)
 
 
-# Add scripting to the root prim with a behavior script and the custom exposed variables values
 def add_behavior_script_with_parameters(prim_path, behavior_class, exposed_variables={}):
+    """Add a behavior script to a prim and set exposed variable values."""
     stage = omni.usd.get_context().get_stage()
     prim = stage.GetPrimAtPath(prim_path)
     if not prim:
@@ -82,8 +90,8 @@ def add_behavior_script_with_parameters(prim_path, behavior_class, exposed_varia
         exposed_var_attr.Set(var_value)
 
 
-# Remove the scripts from the prim paths list
 def remove_all_scripts(prim_paths):
+    """Remove all behavior scripts from the given prim paths."""
     stage = omni.usd.get_context().get_stage()
     for prim_path in prim_paths:
         prim = stage.GetPrimAtPath(prim_path)
@@ -95,16 +103,16 @@ def remove_all_scripts(prim_paths):
         scripts_attr.Set(Sdf.AssetPathArray())
 
 
-# Create prims for single randomization (single prim at root)
 def create_prims_single(prim_path, prim_type):
+    """Create a single prim at the given path for randomization."""
     stage = omni.usd.get_context().get_stage()
     prim = stage.DefinePrim(prim_path, prim_type)
     if not prim.IsValid():
         raise RuntimeError(f"Failed to create prim of type {prim_type} at {prim_path}")
 
 
-# Create prims for multi randomization (children under a root)
 def create_prims_multi(root_path, num_prims=1, prim_type="SphereLight", prim_name="light"):
+    """Create multiple child prims under a root path for randomization."""
     stage = omni.usd.get_context().get_stage()
 
     for i in range(num_prims):

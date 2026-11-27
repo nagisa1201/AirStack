@@ -312,7 +312,8 @@ function run_docker_compose {
         -e USER_ID="$(id -u)" \
         -e GROUP_ID="$(id -g)" \
         -e HOME="$HOME" \
-        -e DISPLAY="$DISPLAY" \
+        -e DISPLAY="${DISPLAY:-}" \
+        -e XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" \
         "${env_args[@]}" \
         --network host \
         "$image_name" \

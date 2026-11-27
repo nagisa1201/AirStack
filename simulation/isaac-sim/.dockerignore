@@ -1,0 +1,10 @@
+**/.git
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+docker/isaac_sim_data
+docker/user.config.json
+docker/omni_pass.env
+docker/.dev
+assets
+standalone_examples

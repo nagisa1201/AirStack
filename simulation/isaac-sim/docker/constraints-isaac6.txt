@@ -1,0 +1,7 @@
+# Isaac Sim v6.0.0 uses NumPy 2; numba requires NumPy < 2.4.
+numpy>=2,<2.4
+scipy==1.17.0
+opencv-python==4.13.0.90
+opencv-python-headless==4.13.0.90
+empy==3.3.4
+quantized-mesh-tile==0.6.1

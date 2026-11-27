@@ -13,12 +13,16 @@ from isaacsim import SimulationApp
 # Start Isaac Sim's simulation environment
 simulation_app = SimulationApp({"headless": False})
 
+# Load Pegasus dependencies before importing its Python modules.
+from isaacsim.core.utils.extensions import enable_extension
+enable_extension("pegasus.simulator")
+
 # -----------------------------------
 # The actual script starts here
 # -----------------------------------
 import omni.kit.app
 import omni.timeline
-from omni.isaac.core.world import World
+from isaacsim.core.api.world import World
 
 # Pegasus imports
 from pegasus.simulator.params import SIMULATION_ENVIRONMENTS

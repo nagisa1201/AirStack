@@ -22,7 +22,7 @@ function cmd_config_isaac_sim {
     
     # Generate user.config.json for IsaacSim settings
     local USER_CONFIG_JSON_SOURCE="${PROJECT_ROOT}/simulation/isaac-sim/docker/user_TEMPLATE.config.json"
-    local USER_CONFIG_JSON_DESTINATION="${PROJECT_ROOT}/simulation/isaac-sim/docker/user.config.json"
+    local USER_CONFIG_JSON_DESTINATION="${PROJECT_ROOT}/simulation/isaac-sim/docker/user.6.0.config.json"
     
     log_info "Generating Default IsaacSim Config ($USER_CONFIG_JSON_DESTINATION)"
     

@@ -1,11 +1,19 @@
-# Copyright (c) 2021-2024, NVIDIA CORPORATION. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
 #
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto. Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Demonstrate cloning ant robots using GridCloner and controlling them as articulations."""
 
 from isaacsim import SimulationApp
 
@@ -14,11 +22,13 @@ simulation_app = SimulationApp({"headless": False})
 import sys
 
 import carb
+import isaacsim.core.experimental.utils.app as app_utils
+import isaacsim.core.experimental.utils.stage as stage_utils
 import numpy as np
-from isaacsim.core.api import World
 from isaacsim.core.cloner import GridCloner
-from isaacsim.core.prims import Articulation
-from isaacsim.core.utils.stage import add_reference_to_stage, get_stage_units
+from isaacsim.core.experimental.objects import DistantLight, GroundPlane
+from isaacsim.core.experimental.prims import Articulation
+from isaacsim.core.simulation_manager import SimulationManager
 from isaacsim.storage.native import get_assets_root_path
 
 assets_root_path = get_assets_root_path()
@@ -27,12 +37,13 @@ if assets_root_path is None:
     simulation_app.close()
     sys.exit()
 
-my_world = World(stage_units_in_meters=1.0)
-my_world.scene.add_default_ground_plane()
+stage_utils.set_stage_units(meters_per_unit=1.0)
+GroundPlane("/World/GroundPlane")
+DistantLight("/World/DistantLight").set_intensities(1000)
 
 # create initial robot
-asset_path = assets_root_path + "/Isaac/Robots/Ant/ant.usd"
-add_reference_to_stage(usd_path=asset_path, prim_path="/World/Ants/Ant_0")
+asset_path = assets_root_path + "/Isaac/Robots/IsaacSim/Ant/ant.usd"
+stage_utils.add_reference_to_stage(usd_path=asset_path, path="/World/Ants/Ant_0")
 
 # create GridCloner instance
 cloner = GridCloner(spacing=2)
@@ -51,11 +62,15 @@ cloner.clone(
 )
 
 # create Articulation
-ants = Articulation("/World/Ants/.*/torso", name="ants_view")
-my_world.scene.add(ants)
+ants = Articulation("/World/Ants/.*/torso")
 
-my_world.reset()
+SimulationManager.setup_simulation(dt=1.0 / 60.0, device="cpu")
+app_utils.play()
+simulation_app.update()
+positions, orientations = ants.get_world_poses()
+print(f"Positions:\n{positions.numpy()}")
+print(f"Orientations (wxyz):\n{orientations.numpy()}")
+
 for i in range(1000):
-    print(ants.get_world_poses())
-    my_world.step()
+    simulation_app.update()
 simulation_app.close()

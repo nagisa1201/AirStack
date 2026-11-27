@@ -63,3 +63,21 @@ nucleus_token.txt
 
 # mkdocs
 mkdocs.log
+
+# Local test/benchmark material; keep the deployment sensor check.
+/simulation/isaac-sim/standalone_examples/testing/
+/simulation/isaac-sim/standalone_examples/benchmarks/
+/simulation/isaac-sim/tests/*
+!/simulation/isaac-sim/tests/smoke_isaac6.py
+/simulation/isaac-sim/utils/migrate_gui_scene_6.py
+.pytest_cache/
+.coverage
+htmlcov/
+/test-results/
+/smoke-results/
+*.log
+*.bag
+*.db3
+*.mcap
+.env.local
+.env.*.local

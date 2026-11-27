@@ -10,6 +10,10 @@ simulation_app = SimulationApp({
     "headless": _raven_headless,
     "disable_viewport_updates": _raven_headless,
 })
+
+# Load Pegasus dependencies before importing its Python modules.
+from isaacsim.core.utils.extensions import enable_extension
+enable_extension("pegasus.simulator")
 print(f"[Render] headless={_raven_headless}, disable_viewport_updates={_raven_headless}", flush=True)
 
 import sys
@@ -20,7 +24,7 @@ import omni.timeline
 import omni.usd
 import omni.client
 
-from omni.isaac.core.world import World
+from isaacsim.core.api.world import World
 
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 from pegasus.simulator.ogn.api.spawn_multirotor import spawn_px4_multirotor_node
